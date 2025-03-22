@@ -366,78 +366,8 @@ const questions = [
     ],
     "answer": "To delete an existing table from the database",
     "explanation": "The DROP TABLE statement is used in SQL to remove an existing table and its data from the database entirely."
-},{
-  "term": "Tuple",
-  "definition": "An ordered collection of elements enclosed in parentheses, where order matters (e.g., (a, b, c) is different from (c, b, a))."
 },
 {
-  "term": "Table",
-  "definition": "A data structure in a relational database with a name, a fixed tuple of columns, and a varying set of rows; also called a file or relation."
-},
-{
-  "term": "Column",
-  "definition": "A named component of a table with a specific data type; also called a field or attribute."
-},
-{
-  "term": "Row",
-  "definition": "An unnamed tuple of values in a table, where each value corresponds to a column and matches its data type; also called a record or tuple."
-},
-{
-  "term": "Data Type",
-  "definition": "A named set of values (e.g., INT, VARCHAR, DATE) from which column values in a table are drawn."
-},
-{
-  "term": "Cell",
-  "definition": "A single column of a single row in a relational database table."
-},
-{
-  "term": "Literals",
-  "definition": "Explicit values in SQL, such as strings ('String' or \"String\"), numbers (123), or binary values (x'0fa2')."
-},
-{
-  "term": "Keywords",
-  "definition": "Words with special meaning in SQL, such as SELECT, FROM, and WHERE."
-},
-{
-  "term": "Identifiers",
-  "definition": "Names of database objects like tables or columns (e.g., City, Name, Population)."
-},
-{
-  "term": "Comments",
-  "definition": "Statements in SQL ignored by the database, intended for humans (e.g., -- single line or /* multi-line */)."
-},
-{
-  "term": "Data Definition Language (DDL)",
-  "definition": "An SQL sublanguage that defines the structure of the database (e.g., CREATE TABLE, DROP TABLE)."
-},
-{
-  "term": "Data Query Language (DQL)",
-  "definition": "An SQL sublanguage that retrieves data from the database (e.g., SELECT)."
-},
-{
-  "term": "Data Manipulation Language (DML)",
-  "definition": "An SQL sublanguage that manipulates data in the database (e.g., INSERT, UPDATE, DELETE)."
-},
-{
-  "term": "Data Control Language (DCL)",
-  "definition": "An SQL sublanguage that controls database user access (e.g., GRANT, REVOKE)."
-},
-{
-  "term": "Data Transaction Language (DTL)",
-  "definition": "An SQL sublanguage that manages database transactions (e.g., COMMIT, ROLLBACK)."
-},
-{
-  "term": "Data Independence",
-  "definition": "Rule 7 in relational databases, allowing data organization changes to improve query performance without affecting query results."
-},
-{
-  "term": "CREATE TABLE",
-  "definition": "An SQL statement that creates a new table by specifying its name, column names, and data types (e.g., INT, VARCHAR(N), DATE, DECIMAL(M, D))."
-},
-{
-  "term": "DROP TABLE",
-  "definition": "An SQL statement that deletes an existing table and its data from the database."
-},{
   "question": "What does the ALTER TABLE statement do in SQL?",
   "options": [
       "Deletes a table and its rows",
