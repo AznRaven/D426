@@ -1,64 +1,7 @@
 "use client";
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect } from "react";
 import questionsData from "../data/questions";
 import flashcards from "../data/flashcards";
-
-// Reducer for complex state management
-function quizReducer(state, action) {
-  switch (action.type) {
-    case "INITIALIZE_QUIZ":
-      return {
-        ...state,
-        questions: action.payload.questions,
-        currentQuestion: 0,
-        score: 0,
-        showScore: false,
-        selectedAnswer: null,
-        showExplanation: false,
-        timer: null,
-        answeredQuestions: [],
-        skippedQuestions: [],
-      };
-    case "SELECT_ANSWER":
-      return {
-        ...state,
-        selectedAnswer: action.payload.option,
-        showExplanation: true,
-        timer: 10,
-        score: action.payload.isCorrect ? state.score + 1 : state.score,
-        answeredQuestions: [...state.answeredQuestions, state.currentQuestion],
-      };
-    case "NEXT_QUESTION":
-      return {
-        ...state,
-        currentQuestion: (state.currentQuestion + 1) % state.questions.length,
-        selectedAnswer: null,
-        showExplanation: false,
-        timer: null,
-      };
-    case "SKIP_QUESTION":
-      return {
-        ...state,
-        currentQuestion: (state.currentQuestion + 1) % state.questions.length,
-        skippedQuestions: [...state.skippedQuestions, state.currentQuestion],
-        selectedAnswer: null,
-        showExplanation: false,
-        timer: null,
-      };
-    case "FINISH_QUIZ":
-      return {
-        ...state,
-        showScore: true,
-      };
-    case "UPDATE_TIMER":
-      return {
-        ...state,
-        timer: state.timer > 0 ? state.timer - 1 : 0,
-      };
-    default:
-      return state;
-  }
-}
 
 export default function Home() {
   // Flashcard state
@@ -67,18 +10,16 @@ export default function Home() {
   const [showDefinition, setShowDefinition] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
-  // Quiz state using reducer
-  const [state, dispatch] = useReducer(quizReducer, {
-    questions: [],
-    currentQuestion: 0,
-    score: 0,
-    showScore: false,
-    selectedAnswer: null,
-    showExplanation: false,
-    timer: null,
-    answeredQuestions: [],
-    skippedQuestions: [],
-  });
+  // Quiz state
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showScore, setShowScore] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [timer, setTimer] = useState(null);
+  const [answeredQuestions, setAnsweredQuestions] = useState([]);
+  const [skippedQuestions, setSkippedQuestions] = useState([]);
 
   // Load high scores from localStorage
   const [highScores, setHighScores] = useState([]);
@@ -109,20 +50,17 @@ export default function Home() {
 
   // Handle explanation timer
   useEffect(() => {
-    if (state.showExplanation) {
+    if (showExplanation) {
       const countdown = setInterval(() => {
-        dispatch({ type: "UPDATE_TIMER" });
+        setTimer((prevTimer) => (prevTimer > 0 ? prevTimer - 1 : 0));
       }, 1000);
 
       const explanationTimer = setTimeout(() => {
-        if (
-          state.answeredQuestions.length + state.skippedQuestions.length >=
-          state.questions.length
-        ) {
+        if (answeredQuestions.length + skippedQuestions.length >= questions.length) {
           saveScore();
-          dispatch({ type: "FINISH_QUIZ" });
+          setShowScore(true);
         } else {
-          dispatch({ type: "NEXT_QUESTION" });
+          nextQuestion();
         }
       }, 10000);
 
@@ -131,7 +69,7 @@ export default function Home() {
         clearInterval(countdown);
       };
     }
-  }, [state.showExplanation]);
+  }, [showExplanation]);
 
   // Keyboard controls
   useEffect(() => {
@@ -145,14 +83,11 @@ export default function Home() {
         } else if (e.key === "ArrowLeft" || e.key === "p") {
           prevFlashcard();
         }
-      } else if (!state.showScore && !state.selectedAnswer) {
+      } else if (!showScore && !selectedAnswer) {
         // Quiz mode keys - number keys to select answers
         const num = parseInt(e.key);
-        if (
-          num >= 1 &&
-          num <= state.questions[state.currentQuestion]?.options.length
-        ) {
-          handleAnswer(state.questions[state.currentQuestion].options[num - 1]);
+        if (num >= 1 && num <= questions[currentQuestion]?.options.length) {
+          handleAnswer(questions[currentQuestion].options[num - 1]);
         } else if (e.key === "s") {
           skipQuestion();
         }
@@ -161,7 +96,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showFlashcards, showDefinition, state]);
+  }, [showFlashcards, showDefinition, questions, currentQuestion, selectedAnswer, showScore]);
 
   const shuffleArray = (array) => {
     return [...array].sort(() => Math.random() - 0.5);
@@ -173,16 +108,23 @@ export default function Home() {
       options: Array.isArray(q.options) ? shuffleArray([...q.options]) : [], // Ensure options is an array
     }));
 
-    dispatch({
-      type: "INITIALIZE_QUIZ",
-      payload: { questions: shuffledQuestions },
-    });
+    console.log("Shuffled Questions:", shuffledQuestions);
+
+    setQuestions(shuffledQuestions);
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowScore(false);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setTimer(null);
+    setAnsweredQuestions([]);
+    setSkippedQuestions([]);
   };
 
   const handleAnswer = (option) => {
-    if (!state.questions.length) return;
+    if (!questions.length) return;
 
-    const isCorrect = option === state.questions[state.currentQuestion].answer;
+    const isCorrect = option === questions[currentQuestion].answer;
 
     // Play sound effect if enabled
     if (isCorrect) {
@@ -191,20 +133,34 @@ export default function Home() {
       playSound("incorrect");
     }
 
-    dispatch({
-      type: "SELECT_ANSWER",
-      payload: { option, isCorrect },
-    });
+    console.log("Handling Answer:", option, "Is Correct:", isCorrect);
+
+    setSelectedAnswer(option);
+    setShowExplanation(true);
+    setTimer(10);
+    if (isCorrect) {
+      setScore((prevScore) => prevScore + 1);
+    }
+    setAnsweredQuestions((prevAnswered) => [...prevAnswered, currentQuestion]);
+  };
+
+  const nextQuestion = () => {
+    setCurrentQuestion((prevQuestion) => (prevQuestion + 1) % questions.length);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setTimer(null);
   };
 
   const skipQuestion = () => {
-    dispatch({ type: "SKIP_QUESTION" });
+    console.log("Skipping Question:", currentQuestion);
+    setSkippedQuestions((prevSkipped) => [...prevSkipped, currentQuestion]);
+    nextQuestion();
   };
 
   const saveScore = () => {
     const newScore = {
-      score: state.score,
-      total: state.questions.length,
+      score: score,
+      total: questions.length,
       date: new Date().toISOString(),
     };
 
@@ -222,9 +178,7 @@ export default function Home() {
   };
 
   const prevFlashcard = () => {
-    setCurrentFlashcard(
-      (currentFlashcard - 1 + flashcards.length) % flashcards.length
-    );
+    setCurrentFlashcard((currentFlashcard - 1 + flashcards.length) % flashcards.length);
     setShowDefinition(false);
   };
 
@@ -242,21 +196,17 @@ export default function Home() {
   };
 
   // Calculate quiz progress percentage
-  const progressPercentage = state.questions.length
-    ? ((state.answeredQuestions.length + state.skippedQuestions.length) /
-        state.questions.length) *
-      100
+  const progressPercentage = questions.length
+    ? ((answeredQuestions.length + skippedQuestions.length) / questions.length) * 100
     : 0;
 
   const skipCountdown = () => {
-    if (
-      state.answeredQuestions.length + state.skippedQuestions.length >=
-      state.questions.length
-    ) {
+    console.log("Skipping Countdown:", currentQuestion);
+    if (answeredQuestions.length + skippedQuestions.length >= questions.length) {
       saveScore();
-      dispatch({ type: "FINISH_QUIZ" });
+      setShowScore(true);
     } else {
-      dispatch({ type: "NEXT_QUESTION" });
+      nextQuestion();
     }
   };
 
@@ -376,7 +326,7 @@ export default function Home() {
                 </button>
               </div>
             </div>
-          ) : state.showScore ? (
+          ) : showScore ? (
             <div
               className={`p-6 rounded-lg shadow-md ${
                 darkMode ? "bg-gray-800" : "bg-white"
@@ -386,8 +336,8 @@ export default function Home() {
                 Quiz Complete!
               </h2>
               <p className="text-center text-lg mb-6">
-                Your Score: {state.score} / {state.questions.length} (
-                {Math.round((state.score / state.questions.length) * 100)}%)
+                Your Score: {score} / {questions.length} (
+                {Math.round((score / questions.length) * 100)}%)
               </p>
 
               {/* High scores */}
@@ -443,10 +393,8 @@ export default function Home() {
                   }`}
                 >
                   Question{" "}
-                  {state.answeredQuestions.length +
-                    state.skippedQuestions.length +
-                    1}{" "}
-                  of {state.questions.length}
+                  {answeredQuestions.length + skippedQuestions.length + 1} of{" "}
+                  {questions.length}
                 </p>
               </div>
 
@@ -457,44 +405,40 @@ export default function Home() {
                 }`}
               >
                 <h2 className="text-lg font-bold mb-4">
-                  {state.questions[state.currentQuestion]?.question}
+                  {questions[currentQuestion]?.question}
                 </h2>
 
                 {/* Answer options */}
                 <div className="space-y-2">
-                  {state.questions[state.currentQuestion]?.options.map(
-                    (option, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleAnswer(option)}
-                        disabled={state.selectedAnswer !== null}
-                        className={`w-full p-3 rounded-lg flex items-center transition-colors ${
-                          state.selectedAnswer === null
-                            ? `${
-                                darkMode
-                                  ? "bg-gray-700 hover:bg-gray-600"
-                                  : "bg-gray-200 hover:bg-gray-300"
-                              }`
-                            : state.selectedAnswer === option
-                            ? option ===
-                              state.questions[state.currentQuestion].answer
-                              ? "bg-green-500 text-white"
-                              : "bg-red-500 text-white"
-                            : option ===
-                                state.questions[state.currentQuestion].answer &&
-                              state.selectedAnswer !== null
+                  {questions[currentQuestion]?.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswer(option)}
+                      disabled={selectedAnswer !== null}
+                      className={`w-full p-3 rounded-lg flex items-center transition-colors ${
+                        selectedAnswer === null
+                          ? `${
+                              darkMode
+                                ? "bg-gray-700 hover:bg-gray-600"
+                                : "bg-gray-200 hover:bg-gray-300"
+                            }`
+                          : selectedAnswer === option
+                          ? option === questions[currentQuestion].answer
                             ? "bg-green-500 text-white"
-                            : `${darkMode ? "bg-gray-700" : "bg-gray-200"}`
-                        }`}
-                      >
-                        <span className="mr-2">{index + 1}.</span> {option}
-                      </button>
-                    )
-                  )}
+                            : "bg-red-500 text-white"
+                          : option === questions[currentQuestion].answer &&
+                            selectedAnswer !== null
+                          ? "bg-green-500 text-white"
+                          : `${darkMode ? "bg-gray-700" : "bg-gray-200"}`
+                      }`}
+                    >
+                      <span className="mr-2">{index + 1}.</span> {option}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Skip button */}
-                {state.selectedAnswer === null && (
+                {selectedAnswer === null && (
                   <button
                     onClick={skipQuestion}
                     className={`mt-4 px-4 py-2 w-full ${
@@ -508,7 +452,7 @@ export default function Home() {
                 )}
 
                 {/* Explanation section */}
-                {state.showExplanation && (
+                {showExplanation && (
                   <div
                     className={`mt-6 p-4 rounded-lg ${
                       darkMode ? "bg-gray-700" : "bg-gray-100"
@@ -516,19 +460,19 @@ export default function Home() {
                   >
                     <h3 className="font-bold mb-2">Explanation:</h3>
                     <p className="text-sm">
-                      {state.questions[state.currentQuestion]?.explanation}
+                      {questions[currentQuestion]?.explanation}
                     </p>
                     <div className="mt-3 flex items-center">
                       <div className="w-full bg-gray-300 rounded-full h-2 mr-2">
                         <div
                           className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${(state.timer / 10) * 100}%` }}
+                          style={{ width: `${(timer / 10) * 100}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm">{state.timer}s</span>
+                      <span className="text-sm">{timer}s</span>
                     </div>
                     {/* Add the skip countdown button */}
-                    {/* <button
+                    <button
                       onClick={skipCountdown}
                       className={`mt-4 px-4 py-2 w-full ${
                         darkMode
@@ -537,7 +481,7 @@ export default function Home() {
                       } rounded-lg`}
                     >
                       Skip Countdown
-                    </button> */}
+                    </button>
                   </div>
                 )}
               </div>
