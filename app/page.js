@@ -528,7 +528,7 @@ export default function Home() {
                       <span className="text-sm">{state.timer}s</span>
                     </div>
                     {/* Add the skip countdown button */}
-                    <button
+                    {/* <button
                       onClick={skipCountdown}
                       className={`mt-4 px-4 py-2 w-full ${
                         darkMode
@@ -537,7 +537,7 @@ export default function Home() {
                       } rounded-lg`}
                     >
                       Skip Countdown
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>
