@@ -170,7 +170,7 @@ export default function Home() {
   const resetQuiz = () => {
     const shuffledQuestions = shuffleArray([...questionsData]).map((q) => ({
       ...q,
-      options: shuffleArray([...q.options]),
+      options: Array.isArray(q.options) ? shuffleArray([...q.options]) : [], // Ensure options is an array
     }));
 
     dispatch({
@@ -248,6 +248,18 @@ export default function Home() {
       100
     : 0;
 
+  const skipCountdown = () => {
+    if (
+      state.answeredQuestions.length + state.skippedQuestions.length >=
+      state.questions.length
+    ) {
+      saveScore();
+      dispatch({ type: "FINISH_QUIZ" });
+    } else {
+      dispatch({ type: "NEXT_QUESTION" });
+    }
+  };
+
   return (
     <div>
       <div
@@ -256,8 +268,10 @@ export default function Home() {
         }`}
       >
         <div className="w-full max-w-md">
-          <h2 className="text-center text-6xl my-10">D426</h2>
-          <h2 className="text-center text-3xl my-10">Data Management Foundations</h2>
+          <h2 className="text-center text-6xl my-5">D426</h2>
+          <p className="text-center text-3xl my-5">
+            Data Management Foundations
+          </p>
           {/* Header with mode toggles */}
           <div className="flex justify-between items-center mb-6">
             <button
@@ -513,6 +527,17 @@ export default function Home() {
                       </div>
                       <span className="text-sm">{state.timer}s</span>
                     </div>
+                    {/* Add the skip countdown button */}
+                    <button
+                      onClick={skipCountdown}
+                      className={`mt-4 px-4 py-2 w-full ${
+                        darkMode
+                          ? "bg-gray-600 hover:bg-gray-500"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      } rounded-lg`}
+                    >
+                      Skip Countdown
+                    </button>
                   </div>
                 )}
               </div>
